@@ -1,17 +1,17 @@
 # MyDeviceMyPDF - Task Checklist
 
 ## 1. Setup
-- [ ] Initialize Vite + React + TypeScript project
-- [ ] Install dependencies (`pdf-lib`, `react-router-dom`)
-- [ ] Create base CSS with black/white bold design system
-- [ ] Set up routing structure
-- [ ] Create Layout component with navigation
+- [x] Initialize Vite + React + TypeScript project
+- [x] Install dependencies (`pdf-lib`, `react-router-dom`)
+- [x] Create base CSS with black/white bold design system
+- [x] Set up routing structure
+- [x] Create Layout component with navigation
 
 ## 2. Homepage
-- [ ] Hero section with privacy-first messaging
-- [ ] Tool cards grid (Compress, Split, Merge)
-- [ ] Trust indicators section
-- [ ] Footer with app info
+- [x] Hero section with privacy-first messaging
+- [x] Tool cards grid (Compress, Split, Merge)
+- [x] Trust indicators section
+- [x] Footer with app info
 
 ## 3. Compress Page
 - [ ] FileDropzone component for PDF upload
