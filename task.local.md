@@ -14,12 +14,12 @@
 - [x] Footer with app info
 
 ## 3. Compress Page
-- [ ] FileDropzone component for PDF upload
-- [ ] Compression quality selector
-- [ ] ProgressIndicator during processing
-- [ ] PDF compression logic using Canvas API + Web Worker
-- [ ] Before/after size comparison display
-- [ ] Download compressed PDF button
+- [x] FileDropzone component for PDF upload
+- [x] Compression quality selector
+- [x] ProgressIndicator during processing
+- [x] PDF compression logic using Canvas API + Web Worker
+- [x] Before/after size comparison display
+- [x] Download compressed PDF button
 
 ## 4. Split Page
 - [ ] FileDropzone for single PDF upload

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
+import CompressPage from './pages/CompressPage';
 
 // Placeholder pages for routing
 function ComingSoon({ title }: { title: string }) {
@@ -18,7 +19,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route path="compress" element={<ComingSoon title="Compress PDF" />} />
+          <Route path="compress" element={<CompressPage />} />
           <Route path="split" element={<ComingSoon title="Split PDF" />} />
           <Route path="merge" element={<ComingSoon title="Merge PDFs" />} />
         </Route>
