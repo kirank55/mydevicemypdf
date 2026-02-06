@@ -5,9 +5,9 @@ import HomePage from './pages/HomePage';
 // Placeholder pages for routing
 function ComingSoon({ title }: { title: string }) {
   return (
-    <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
-      <h1>{title}</h1>
-      <p style={{ marginTop: '1rem' }}>Coming soon...</p>
+    <div className="max-w-6xl mx-auto px-4 py-16 text-center">
+      <h1 className="text-4xl font-black mb-4">{title}</h1>
+      <p className="text-gray-500">Coming soon...</p>
     </div>
   );
 }
