@@ -10,15 +10,15 @@ export default function Layout() {
                     </Link>
                     <nav className="flex gap-4">
                         <NavLink
-                            to="/compress"
+                            to="https://github.com/"
                             className={({ isActive }) =>
                                 `font-bold uppercase tracking-wide px-2 py-1 border-b-4 transition-colors ${isActive ? 'border-black' : 'border-transparent hover:border-gray-300'
                                 }`
                             }
                         >
-                            Compress
+                            Github
                         </NavLink>
-                        <NavLink
+                        {/* <NavLink
                             to="/split"
                             className={({ isActive }) =>
                                 `font-bold uppercase tracking-wide px-2 py-1 border-b-4 transition-colors ${isActive ? 'border-black' : 'border-transparent hover:border-gray-300'
@@ -35,7 +35,7 @@ export default function Layout() {
                             }
                         >
                             Merge
-                        </NavLink>
+                        </NavLink> */}
                     </nav>
                 </div>
             </header>
