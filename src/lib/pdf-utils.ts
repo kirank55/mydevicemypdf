@@ -1,39 +1,158 @@
-import { PDFDocument } from 'pdf-lib';
-import type { WorkerMessage, WorkerResponse } from './compression.worker';
+/**
+ * PDF Compression Utilities
+ * 
+ * This module provides client-side PDF compression using the @quicktoolsone/pdf-compress
+ * library. All processing happens entirely in the browser - files never leave the device.
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * HOW PDF COMPRESSION WORKS
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * 
+ * PDFs are complex documents containing multiple types of content:
+ * - Text and fonts
+ * - Vector graphics
+ * - Embedded images (often 80-95% of file size)
+ * - Metadata and structural information
+ * 
+ * This library uses a MULTI-STRATEGY approach to achieve optimal compression:
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────────────────────┐
+ * │ STRATEGY 1: LOSSLESS STRUCTURAL OPTIMIZATION (using pdf-lib)                       │
+ * ├─────────────────────────────────────────────────────────────────────────────────────┤
+ * │ • Object Stream Compression: Combines multiple small PDF objects into compressed   │
+ * │   streams, reducing overhead from individual object headers                         │
+ * │ • Removes orphaned/unused objects: Pages to a new document, leaving behind any     │
+ * │   unreferenced resources from the original                                          │
+ * │ • Optimizes internal references: Streamlines the PDF's cross-reference table       │
+ * │ • Typical reduction: 5-15% for most PDFs                                           │
+ * └─────────────────────────────────────────────────────────────────────────────────────┘
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────────────────────┐
+ * │ STRATEGY 2: IMAGE RE-COMPRESSION (using pdf.js + Canvas API)                       │
+ * ├─────────────────────────────────────────────────────────────────────────────────────┤
+ * │ This is where the major file size reduction happens for image-heavy PDFs:          │
+ * │                                                                                     │
+ * │ 1. RENDER: Each page is rendered using Mozilla's pdf.js library                    │
+ * │ 2. ADAPTIVE DPI: Resolution is adjusted based on file size:                        │
+ * │    • 50MB+  → 50 DPI  (extremely aggressive)                                       │
+ * │    • 20-50MB → 75 DPI                                                               │
+ * │    • 10-20MB → 100 DPI                                                              │
+ * │    • <10MB  → 150 DPI                                                               │
+ * │ 3. JPEG COMPRESSION: Rendered pages are compressed as JPEG with quality:           │
+ * │    • Lossless preset: Skips this strategy entirely (no image recompression)        │
+ * │    • Max preset: 50% JPEG quality (aggressive)                                      │
+ * │ 4. REBUILD: A new PDF is created with the compressed page images                   │
+ * │ 5. MEMORY-SAFE: Canvas cleanup between pages, extra delays for large files         │
+ * │                                                                                     │
+ * │ Typical reduction: 40-90% for image-heavy PDFs, scanned documents                  │
+ * └─────────────────────────────────────────────────────────────────────────────────────┘
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────────────────────┐
+ * │ STRATEGY 3: BEST RESULT SELECTION                                                  │
+ * ├─────────────────────────────────────────────────────────────────────────────────────┤
+ * │ The library compares results from both strategies and returns the smallest file    │
+ * │ that is still smaller than the original. If no compression helps, returns original.│
+ * └─────────────────────────────────────────────────────────────────────────────────────┘
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * COMPRESSION PRESETS
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * 
+ * LOSSLESS:
+ *   - Uses ONLY Strategy 1 (structural optimization)
+ *   - No quality loss - text remains crisp, images unchanged
+ *   - Best for: text-heavy documents, legal documents, archival
+ *   - Expected reduction: 5-15%
+ * 
+ * MAXIMUM:
+ *   - Uses Strategy 1 + Strategy 2 (full image recompression)
+ *   - Aggressive JPEG quality (50%) and adaptive DPI
+ *   - Best for: image-heavy PDFs, scanned documents, photos
+ *   - Expected reduction: 60-90% for image-heavy content
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * BROWSER REQUIREMENTS
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * 
+ * - Canvas API (for image rendering/compression)
+ * - Modern ES2020+ JavaScript support
+ * - PDF.js worker file (served from /pdf.js/pdf.worker.min.mjs)
+ * - Supported: Chrome/Edge 90+, Firefox 89+, Safari 15+
+ * 
+ * @module pdf-utils
+ */
+
+import { compress, type ProgressEvent } from '@quicktoolsone/pdf-compress';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface CompressionResult {
+    /** Original file size in bytes */
     originalSize: number;
+    /** Compressed file size in bytes */
     compressedSize: number;
+    /** The compressed PDF as a Blob, ready for download */
     blob: Blob;
+    /** Suggested output filename (original name + "_compressed.pdf") */
     fileName: string;
 }
 
 export interface CompressionOptions {
-    quality: 'low' | 'medium' | 'high';
+    /** 
+     * Compression quality preset:
+     * - 'lossless': Structural optimization only (5-15% reduction)
+     * - 'maximum': Full image recompression (60-90% reduction)
+     * - 'extreme': Aggressive rasterization at very low DPI (80-95% reduction, text becomes unselectable)
+     */
+    quality: 'lossless' | 'maximum' | 'extreme';
+    /** Progress callback, receives 0-100 percentage */
     onProgress?: (progress: number) => void;
 }
 
-// Quality settings affect save optimization
-// Used in both main thread fallback and worker
-const QUALITY_SETTINGS = {
-    low: { objectsPerTick: 20 },    // Slower but more thorough
-    medium: { objectsPerTick: 50 }, // Balanced
-    high: { objectsPerTick: 100 },  // Faster
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURATION
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Compresses a PDF file using a Web Worker for background processing.
- * Falls back to main thread if Web Workers are unavailable.
+ * Maps our simplified quality levels to the library's internal presets.
  * 
- * IMPROVEMENTS OVER BASIC COMPRESSION:
- * 1. Web Worker - Runs in background thread, UI stays responsive
- * 2. Quality-based optimization - Different settings per quality level
- * 3. Metadata preservation - Keeps title, author, subject
- * 4. Buffer transfer - Zero-copy transfer from worker for performance
+ * Library presets:
+ * - 'lossless': Structural optimization only (pdf-lib)
+ * - 'balanced': Smart multi-strategy with 70% JPEG quality
+ * - 'max': Aggressive compression with 50% JPEG quality
  * 
- * @param file - The PDF file to compress
- * @param options - Quality level and progress callback
- * @returns Compression result with blob and size info
+ * For 'extreme', we use 'max' preset with custom overrides for even more aggressive settings.
+ */
+const QUALITY_TO_PRESET = {
+    lossless: 'lossless',
+    maximum: 'max',
+    extreme: 'max', // Uses max preset with custom DPI/quality overrides
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN COMPRESSION FUNCTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Compresses a PDF file entirely in the browser.
+ * 
+ * @example
+ * ```typescript
+ * const result = await compressPDF(file, {
+ *     quality: 'maximum',
+ *     onProgress: (percent) => console.log(`${percent}% complete`)
+ * });
+ * 
+ * console.log(`Reduced from ${result.originalSize} to ${result.compressedSize} bytes`);
+ * downloadBlob(result.blob, result.fileName);
+ * ```
+ * 
+ * @param file - The PDF File object to compress
+ * @param options - Compression options including quality preset and progress callback
+ * @returns Promise resolving to compression result with the compressed PDF blob
+ * @throws Error if the PDF cannot be parsed or compression fails
  */
 export async function compressPDF(
     file: File,
@@ -41,154 +160,60 @@ export async function compressPDF(
 ): Promise<CompressionResult> {
     const { quality, onProgress } = options;
 
-    // Try to use Web Worker for better performance
-    if (typeof Worker !== 'undefined') {
-        try {
-            return await compressWithWorker(file, quality, onProgress);
-        } catch (err) {
-            console.warn('Worker compression failed, falling back to main thread:', err);
-            // Fall through to main thread compression
-        }
-    }
-
-    // Fallback: Run compression on main thread
-    return compressOnMainThread(file, quality, onProgress);
-}
-
-/**
- * Compress PDF using Web Worker (background thread)
- */
-async function compressWithWorker(
-    file: File,
-    quality: 'low' | 'medium' | 'high',
-    onProgress?: (progress: number) => void
-): Promise<CompressionResult> {
-    return new Promise((resolve, reject) => {
-        // Create the worker - Vite handles the bundling
-        const worker = new Worker(
-            new URL('./compression.worker.ts', import.meta.url),
-            { type: 'module' }
-        );
-
-        // Handle messages from the worker
-        worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-            const { type, progress, result, error } = event.data;
-
-            switch (type) {
-                case 'progress':
-                    if (progress !== undefined) {
-                        onProgress?.(progress);
-                    }
-                    break;
-
-                case 'complete':
-                    if (result) {
-                        // Convert ArrayBuffer back to Blob
-                        const blob = new Blob([result.compressedBuffer], { type: 'application/pdf' });
-                        resolve({
-                            originalSize: result.originalSize,
-                            compressedSize: result.compressedSize,
-                            blob,
-                            fileName: result.fileName,
-                        });
-                    }
-                    worker.terminate();
-                    break;
-
-                case 'error':
-                    reject(new Error(error || 'Worker compression failed'));
-                    worker.terminate();
-                    break;
-            }
-        };
-
-        worker.onerror = (error) => {
-            reject(new Error(`Worker error: ${error.message}`));
-            worker.terminate();
-        };
-
-        // Convert file to ArrayBuffer and send to worker
-        file.arrayBuffer().then((fileBuffer) => {
-            const message: WorkerMessage = {
-                type: 'compress',
-                fileBuffer,
-                fileName: file.name,
-                quality,
-            };
-            // Transfer the buffer (zero-copy) for performance
-            worker.postMessage(message, [fileBuffer]);
-        });
-    });
-}
-
-/**
- * Fallback: Compress PDF on main thread
- * Used when Web Workers are unavailable
- */
-async function compressOnMainThread(
-    file: File,
-    quality: 'low' | 'medium' | 'high',
-    onProgress?: (progress: number) => void
-): Promise<CompressionResult> {
-    onProgress?.(5);
-
-    // Load PDF
+    // Step 1: Convert File to ArrayBuffer for processing
     const arrayBuffer = await file.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer, {
-        ignoreEncryption: true,
-        updateMetadata: false,
+    const originalSize = arrayBuffer.byteLength;
+
+    // Step 2: Map our quality setting to library preset
+    const preset = QUALITY_TO_PRESET[quality];
+
+    // Step 3: Compress using @quicktoolsone/pdf-compress
+    // The library handles all strategies internally and returns the best result
+    const result = await compress(arrayBuffer, {
+        preset,
+        onProgress: (event: ProgressEvent) => {
+            // Forward progress updates (0-100 scale)
+            onProgress?.(event.progress);
+        },
+        // Extreme mode: use very aggressive settings
+        // - 36 DPI renders text at ~half the resolution of thumbnail mode
+        // - 30% JPEG quality for maximum compression
+        // - Force rasterization: converts ALL content (including text) to images
+        ...(quality === 'extreme' && {
+            targetDPI: 36,
+            jpegQuality: 0.3,
+            enableRasterization: true,
+            preserveMetadata: false,
+        }),
     });
 
-    onProgress?.(15);
+    // Step 4: Create output blob with proper MIME type
+    const compressedBlob = new Blob([result.pdf], { type: 'application/pdf' });
 
-    // Get pages
-    const pages = pdfDoc.getPages();
-    const totalPages = pages.length;
-
-    // Create optimized PDF
-    const compressedPdf = await PDFDocument.create();
-
-    // Preserve metadata
-    compressedPdf.setTitle(pdfDoc.getTitle() || '');
-    compressedPdf.setAuthor(pdfDoc.getAuthor() || '');
-    compressedPdf.setSubject(pdfDoc.getSubject() || '');
-
-    // Copy pages
-    for (let i = 0; i < totalPages; i++) {
-        const [copiedPage] = await compressedPdf.copyPages(pdfDoc, [i]);
-        compressedPdf.addPage(copiedPage);
-        const pageProgress = 15 + ((i + 1) / totalPages) * 65;
-        onProgress?.(Math.round(pageProgress));
-    }
-
-    onProgress?.(85);
-
-    // Get quality-specific settings
-    const settings = QUALITY_SETTINGS[quality];
-
-    // Save with compression
-    const compressedBytes = await compressedPdf.save({
-        useObjectStreams: true,
-        addDefaultPage: false,
-        objectsPerTick: settings.objectsPerTick,
-    });
-
-    onProgress?.(100);
-
-    const compressedBlob = new Blob([compressedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+    // Step 5: Generate output filename
     const baseName = file.name.replace(/\.pdf$/i, '');
     const outputName = `${baseName}_compressed.pdf`;
 
     return {
-        originalSize: file.size,
-        compressedSize: compressedBlob.size,
+        originalSize,
+        compressedSize: result.stats.compressedSize,
         blob: compressedBlob,
         fileName: outputName,
     };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILITY FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Downloads a blob as a file
+ * Triggers a browser download of a Blob as a file.
+ * 
+ * Creates a temporary anchor element, triggers the download, and cleans up.
+ * Works in all modern browsers.
+ * 
+ * @param blob - The Blob to download
+ * @param fileName - The filename to save as
  */
 export function downloadBlob(blob: Blob, fileName: string): void {
     const url = URL.createObjectURL(blob);
@@ -202,7 +227,14 @@ export function downloadBlob(blob: Blob, fileName: string): void {
 }
 
 /**
- * Formats bytes to human-readable string
+ * Formats a byte count into a human-readable string.
+ * 
+ * @example
+ * formatBytes(1536) // "1.5 KB"
+ * formatBytes(1048576) // "1 MB"
+ * 
+ * @param bytes - Number of bytes
+ * @returns Formatted string like "1.5 MB"
  */
 export function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -213,7 +245,14 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
- * Calculates compression percentage
+ * Calculates the compression percentage achieved.
+ * 
+ * @example
+ * getCompressionPercent(1000, 300) // 70 (70% smaller)
+ * 
+ * @param original - Original size in bytes
+ * @param compressed - Compressed size in bytes
+ * @returns Percentage reduction (0-100), rounded to nearest integer
  */
 export function getCompressionPercent(original: number, compressed: number): number {
     if (original === 0) return 0;

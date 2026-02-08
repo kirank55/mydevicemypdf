@@ -3,11 +3,11 @@ import FileDropzone from '../components/FileDropzone';
 import ProgressIndicator from '../components/ProgressIndicator';
 import { compressPDF, downloadBlob, formatBytes, getCompressionPercent, type CompressionResult } from '../lib/pdf-utils';
 
-type Quality = 'low' | 'medium' | 'high';
+type Quality = 'lossless' | 'maximum' | 'extreme';
 
 export default function CompressPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [quality, setQuality] = useState<Quality>('medium');
+    const [quality, setQuality] = useState<Quality>('maximum');
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [result, setResult] = useState<CompressionResult | null>(null);
@@ -83,23 +83,23 @@ export default function CompressPage() {
                     <div className="bg-gray-50 rounded-2xl p-6">
                         <h3 className="font-black text-lg mb-4">Compression Quality</h3>
                         <div className="grid grid-cols-3 gap-4">
-                            {(['low', 'medium', 'high'] as Quality[]).map((q) => (
+                            {(['lossless', 'maximum', 'extreme'] as Quality[]).map((q) => (
                                 <button
                                     key={q}
                                     onClick={() => setQuality(q)}
                                     className={`
-                    p-4 rounded-xl border-2 transition-all duration-200
-                    ${quality === q
+                                        p-4 rounded-xl border-2 transition-all duration-200
+                                        ${quality === q
                                             ? 'border-black bg-black text-white'
                                             : 'border-gray-200 hover:border-black'
                                         }
-                  `}
+                                    `}
                                 >
                                     <div className="font-black text-lg capitalize">{q}</div>
                                     <div className={`text-sm ${quality === q ? 'text-gray-300' : 'text-gray-500'}`}>
-                                        {q === 'low' && 'Maximum compression'}
-                                        {q === 'medium' && 'Balanced'}
-                                        {q === 'high' && 'Best quality'}
+                                        {q === 'lossless' && 'Best quality'}
+                                        {q === 'maximum' && 'Smallest size'}
+                                        {q === 'extreme' && '⚠️ Tiny file, no text select'}
                                     </div>
                                 </button>
                             ))}
