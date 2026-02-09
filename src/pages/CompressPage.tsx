@@ -55,6 +55,12 @@ export default function CompressPage() {
         setProgress(0);
     };
 
+    const handleTryAgain = () => {
+        setResult(null);
+        setError(null);
+        setProgress(0);
+    };
+
     return (
         <div className="max-w-4xl mx-auto px-4 py-12">
             {/* Header */}
@@ -76,6 +82,7 @@ export default function CompressPage() {
                     <FileDropzone
                         onFileSelect={handleFileSelect}
                         label="Drop your PDF here to compress"
+                        selectedFile={file}
                     />
                 )}
 
@@ -205,6 +212,15 @@ export default function CompressPage() {
                 "
                             >
                                 Download Compressed PDF
+                            </button>
+                            <button
+                                onClick={handleTryAgain}
+                                className="
+                  py-4 px-8 border-2 border-black font-black text-xl
+                  rounded-xl hover:bg-gray-100 transition-all duration-200
+                "
+                            >
+                                Try Again
                             </button>
                             <button
                                 onClick={handleReset}

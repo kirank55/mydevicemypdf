@@ -5,6 +5,7 @@ interface FileDropzoneProps {
     accept?: string;
     maxSizeMB?: number;
     label?: string;
+    selectedFile?: File | null;
 }
 
 export default function FileDropzone({
@@ -12,6 +13,7 @@ export default function FileDropzone({
     accept = '.pdf',
     maxSizeMB = 100,
     label = 'Drop your PDF here',
+    selectedFile,
 }: FileDropzoneProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -23,6 +25,11 @@ export default function FileDropzone({
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
     };
+
+    // Initialize fileName from selectedFile if provided
+    if (selectedFile && !fileName) {
+        setFileName(`${selectedFile.name} (${formatFileSize(selectedFile.size)})`);
+    }
 
     const validateAndProcessFile = (file: File) => {
         setError(null);
