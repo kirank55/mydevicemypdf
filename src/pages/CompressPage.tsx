@@ -3,11 +3,12 @@ import FileDropzone from '../components/FileDropzone';
 import ProgressIndicator from '../components/ProgressIndicator';
 import { compressPDF, downloadBlob, formatBytes, getCompressionPercent, type CompressionResult } from '../lib/pdf-utils';
 
-type Quality = 'lossless' | 'maximum' | 'extreme';
+type Quality = 'lossless' | 'extreme';
 
 export default function CompressPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [quality, setQuality] = useState<Quality>('maximum');
+    const [quality, setQuality] = useState<Quality>('lossless');
+    const [compressionLevel, setCompressionLevel] = useState(70);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [result, setResult] = useState<CompressionResult | null>(null);
@@ -31,7 +32,7 @@ export default function CompressPage() {
         try {
             const compressionResult = await compressPDF(file, {
                 quality,
-                onProgress: setProgress,
+                compressionLevel: quality === 'extreme' ? compressionLevel : undefined,
             });
             setResult(compressionResult);
         } catch (err) {
@@ -82,8 +83,8 @@ export default function CompressPage() {
                 {file && !result && !isProcessing && (
                     <div className="bg-gray-50 rounded-2xl p-6">
                         <h3 className="font-black text-lg mb-4">Compression Quality</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                            {(['lossless', 'maximum', 'extreme'] as Quality[]).map((q) => (
+                        <div className="grid grid-cols-2 gap-4">
+                            {(['lossless', 'extreme'] as Quality[]).map((q) => (
                                 <button
                                     key={q}
                                     onClick={() => setQuality(q)}
@@ -98,12 +99,33 @@ export default function CompressPage() {
                                     <div className="font-black text-lg capitalize">{q}</div>
                                     <div className={`text-sm ${quality === q ? 'text-gray-300' : 'text-gray-500'}`}>
                                         {q === 'lossless' && 'Best quality'}
-                                        {q === 'maximum' && 'Smallest size'}
                                         {q === 'extreme' && '⚠️ Tiny file, no text select'}
                                     </div>
                                 </button>
                             ))}
                         </div>
+
+                        {/* Slider for Extreme Mode */}
+                        {quality === 'extreme' && (
+                            <div className="mt-6 p-4 bg-gray-100 rounded-xl">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="font-bold text-sm text-gray-700">Compression Level</label>
+                                    <span className="font-bold text-sm bg-black text-white px-2 py-1 rounded">{compressionLevel}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="99"
+                                    value={compressionLevel}
+                                    onChange={(e) => setCompressionLevel(Number(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                                />
+                                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Lower Compression</span>
+                                    <span>Higher Compression</span>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Compress button */}
                         <button

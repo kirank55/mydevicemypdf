@@ -64,11 +64,7 @@
  *   - Best for: text-heavy documents, legal documents, archival
  *   - Expected reduction: 5-15%
  * 
- * MAXIMUM:
- *   - Uses Strategy 1 + Strategy 2 (full image recompression)
- *   - Aggressive JPEG quality (50%) and adaptive DPI
- *   - Best for: image-heavy PDFs, scanned documents, photos
- *   - Expected reduction: 60-90% for image-heavy content
+
  * 
  * ═══════════════════════════════════════════════════════════════════════════════════════
  * BROWSER REQUIREMENTS
@@ -82,7 +78,8 @@
  * @module pdf-utils
  */
 
-import { compress, type ProgressEvent } from '@quicktoolsone/pdf-compress';
+
+import { compressExtreme, compressLossless } from './pdf-compressor-mupdf';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -103,33 +100,19 @@ export interface CompressionOptions {
     /** 
      * Compression quality preset:
      * - 'lossless': Structural optimization only (5-15% reduction)
-     * - 'maximum': Full image recompression (60-90% reduction)
+
      * - 'extreme': Aggressive rasterization at very low DPI (80-95% reduction, text becomes unselectable)
      */
-    quality: 'lossless' | 'maximum' | 'extreme';
-    /** Progress callback, receives 0-100 percentage */
-    onProgress?: (progress: number) => void;
+    quality: 'lossless' | 'extreme';
+    /** Compression level (0-100) for extreme mode. Higher means more compression (lower quality). */
+    compressionLevel?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Maps our simplified quality levels to the library's internal presets.
- * 
- * Library presets:
- * - 'lossless': Structural optimization only (pdf-lib)
- * - 'balanced': Smart multi-strategy with 70% JPEG quality
- * - 'max': Aggressive compression with 50% JPEG quality
- * 
- * For 'extreme', we use 'max' preset with custom overrides for even more aggressive settings.
- */
-const QUALITY_TO_PRESET = {
-    lossless: 'lossless',
-    maximum: 'max',
-    extreme: 'max', // Uses max preset with custom DPI/quality overrides
-} as const;
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPRESSION FUNCTION
@@ -158,47 +141,24 @@ export async function compressPDF(
     file: File,
     options: CompressionOptions
 ): Promise<CompressionResult> {
-    const { quality, onProgress } = options;
 
-    // Step 1: Convert File to ArrayBuffer for processing
-    const arrayBuffer = await file.arrayBuffer();
-    const originalSize = arrayBuffer.byteLength;
+    const { quality, compressionLevel = 70 } = options;
+    const originalSize = file.size;
+    let baseName: string = file.name.replace(/\.pdf$/i, '');;
 
-    // Step 2: Map our quality setting to library preset
-    const preset = QUALITY_TO_PRESET[quality];
+    let blob: Blob;
 
-    // Step 3: Compress using @quicktoolsone/pdf-compress
-    // The library handles all strategies internally and returns the best result
-    const result = await compress(arrayBuffer, {
-        preset,
-        onProgress: (event: ProgressEvent) => {
-            // Forward progress updates (0-100 scale)
-            onProgress?.(event.progress);
-        },
-        // Extreme mode: use very aggressive settings
-        // - 36 DPI renders text at ~half the resolution of thumbnail mode
-        // - 30% JPEG quality for maximum compression
-        // - Force rasterization: converts ALL content (including text) to images
-        ...(quality === 'extreme' && {
-            targetDPI: 36,
-            jpegQuality: 0.3,
-            enableRasterization: true,
-            preserveMetadata: false,
-        }),
-    });
-
-    // Step 4: Create output blob with proper MIME type
-    const compressedBlob = new Blob([result.pdf], { type: 'application/pdf' });
-
-    // Step 5: Generate output filename
-    const baseName = file.name.replace(/\.pdf$/i, '');
-    const outputName = `${baseName}_compressed.pdf`;
+    if (quality === 'lossless') {
+        blob = await compressLossless(file);
+    } else {
+        blob = await compressExtreme(file, compressionLevel);
+    }
 
     return {
+        blob,
         originalSize,
-        compressedSize: result.stats.compressedSize,
-        blob: compressedBlob,
-        fileName: outputName,
+        compressedSize: blob.size,
+        fileName: `${baseName}_compressed.pdf`,
     };
 }
 
