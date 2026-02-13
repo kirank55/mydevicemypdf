@@ -1,4 +1,4 @@
-import { Outlet, Link, NavLink } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 
 export default function Layout() {
     return (
@@ -9,33 +9,14 @@ export default function Layout() {
                         MyDevice<span className="bg-black text-white px-1.5 py-0.5 ml-0.5">MyPDF</span>
                     </Link>
                     <nav className="flex gap-4">
-                        <NavLink
-                            to="https://github.com/"
-                            className={({ isActive }) =>
-                                `font-bold uppercase tracking-wide px-2 py-1 border-b-4 transition-colors ${isActive ? 'border-black' : 'border-transparent hover:border-gray-300'
-                                }`
-                            }
+                        <a
+                            href="https://github.com/kirank55/mydevicemypdf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold uppercase tracking-wide px-2 py-1 border-b-4 border-transparent hover:border-gray-300 transition-colors"
                         >
                             Github
-                        </NavLink>
-                        {/* <NavLink
-                            to="/split"
-                            className={({ isActive }) =>
-                                `font-bold uppercase tracking-wide px-2 py-1 border-b-4 transition-colors ${isActive ? 'border-black' : 'border-transparent hover:border-gray-300'
-                                }`
-                            }
-                        >
-                            Split
-                        </NavLink>
-                        <NavLink
-                            to="/merge"
-                            className={({ isActive }) =>
-                                `font-bold uppercase tracking-wide px-2 py-1 border-b-4 transition-colors ${isActive ? 'border-black' : 'border-transparent hover:border-gray-300'
-                                }`
-                            }
-                        >
-                            Merge
-                        </NavLink> */}
+                        </a>
                     </nav>
                 </div>
             </header>
