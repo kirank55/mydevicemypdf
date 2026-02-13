@@ -18,15 +18,9 @@ import {
 } from '../lib/pdf-split';
 
 type SplitMode = 'all' | 'selected';
-type PanelTab = 'range' | 'pages' | 'size';
 
 GlobalWorkerOptions.workerSrc = pdfWorker;
 
-const PANEL_TABS: Array<{ key: PanelTab; label: string }> = [
-    { key: 'range', label: 'Range' },
-    { key: 'pages', label: 'Pages' },
-    { key: 'size', label: 'Size' },
-];
 
 function formatPageRanges(pageNumbers: number[]): string {
     if (pageNumbers.length === 0) return '';
@@ -50,39 +44,7 @@ function formatPageRanges(pageNumbers: number[]): string {
     return ranges.join(',');
 }
 
-function renderTabIcon(tab: PanelTab, active: boolean) {
-    const color = active ? '#2a2d38' : '#a0a5b3';
 
-    if (tab === 'range') {
-        return (
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-                <rect x="2" y="5" width="8" height="16" rx="1.5" stroke={color} strokeWidth="1.8" strokeDasharray="2 2" />
-                <rect x="16" y="5" width="8" height="16" rx="1.5" stroke={color} strokeWidth="1.8" strokeDasharray="2 2" />
-                <line x1="10" y1="13" x2="16" y2="13" stroke={color} strokeWidth="1.8" />
-            </svg>
-        );
-    }
-
-    if (tab === 'size') {
-        return (
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-                <rect x="3" y="11" width="9" height="12" rx="1.5" stroke={color} strokeWidth="1.8" />
-                <rect x="14" y="3" width="9" height="12" rx="1.5" stroke={color} strokeWidth="1.8" />
-                <rect x="15" y="16" width="6" height="7" rx="1.4" stroke={color} strokeWidth="1.8" />
-            </svg>
-        );
-    }
-
-    return (
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-            <rect x="3" y="8" width="9" height="12" rx="1.8" stroke={color} strokeWidth="1.8" />
-            <rect x="16" y="3" width="7" height="7" rx="1.4" stroke={color} strokeWidth="1.8" />
-            <rect x="16" y="11" width="7" height="7" rx="1.4" stroke={color} strokeWidth="1.8" />
-            <rect x="16" y="19" width="7" height="4" rx="1.2" stroke={color} strokeWidth="1.8" />
-            <line x1="12" y1="13.5" x2="16" y2="13.5" stroke={color} strokeWidth="1.8" />
-        </svg>
-    );
-}
 
 export default function SplitPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -368,7 +330,7 @@ export default function SplitPage() {
     return (
         <div className="mx-auto w-full max-w-375 px-4 py-10">
             <div className="mb-8 text-center">
-                <h1 className="mb-3 text-5xl font-black">Split</h1>
+                <h1 className="mb-3 text-5xl font-black">Split PDF</h1>
                 <p className="mx-auto max-w-3xl text-lg text-gray-600">
                     Extract specific pages or split every page into separate PDF files.
                 </p>
@@ -469,26 +431,9 @@ export default function SplitPage() {
                                 </div>
 
                                 <aside className="bg-white">
-                                    <div className="border-b border-[#d4d8e5] px-8 py-5">
-                                        <h2 className="text-center text-5xl font-black tracking-tight text-[#2b2f3d]">Split</h2>
-                                    </div>
 
-                                    <div className="grid grid-cols-3 border-b border-[#d4d8e5]">
-                                        {PANEL_TABS.map((tab) => {
-                                            const isActive = tab.key === 'pages';
-                                            return (
-                                                <button
-                                                    key={tab.key}
-                                                    type="button"
-                                                    disabled={!isActive}
-                                                    className={`flex flex-col items-center justify-center border-r border-[#d4d8e5] px-3 py-5 text-lg last:border-r-0 ${isActive ? 'text-[#202432]' : 'text-[#9ea4b2]'}`}
-                                                >
-                                                    {renderTabIcon(tab.key, isActive)}
-                                                    <span className={`mt-2 text-lg ${isActive ? 'font-semibold' : 'font-medium'}`}>{tab.label}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+
+
 
                                     <div className="space-y-6 px-7 py-8">
                                         <div>
@@ -530,7 +475,7 @@ export default function SplitPage() {
                                             <input
                                                 type="checkbox"
                                                 checked={mergeSelectedPages}
-                                                onChange={(event) => setMergeSelectedPages(!event.target.checked)}
+                                                onChange={(event) => setMergeSelectedPages(event.target.checked)}
                                                 disabled={splitMode !== 'selected'}
                                                 className="mt-1 h-7 w-7 rounded border border-[#9da4b7] accent-[#ef4444]"
                                             />
