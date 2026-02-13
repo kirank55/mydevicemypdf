@@ -17,21 +17,7 @@ export default function HomePage() {
                         </span>{' '}
                         Your Privacy
                     </h1>
-                    {/* <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-8">
-                        Compress, split, and merge PDFs directly in your browser.
-                        No uploads, no servers, no tracking — just pure client-side processing.
-                    </p> */}
-                    {/* <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-8">
-                        Compress, split, and merge PDFs directly in your browser.
-                        No uploads, no servers, no tracking — just pure client-side processing.
-                    </p> */}
                     <div className="flex gap-4 justify-center flex-wrap">
-                        {/* <Link
-                            to="/compress"
-                            className="inline-flex items-center px-8 py-4 font-bold uppercase tracking-wide text-white bg-black border-4 border-black rounded-lg hover:bg-gray-800 hover:-translate-y-0.5 hover:shadow-[0_4px_0_#000] active:translate-y-0 active:shadow-none transition-all"
-                        >
-                            Start Compressing
-                        </Link> */}
                         <Link
                             to="/compress"
                             className="inline-flex items-center px-8 py-4 font-bold uppercase tracking-wide text-black bg-white border-4 border-black rounded-lg hover:bg-gray-100 hover:-translate-y-0.5 hover:shadow-[0_4px_0_#000] active:translate-y-0 active:shadow-none transition-all"
@@ -53,50 +39,6 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
-
-            {/* Tools Section */}
-            {/* <section className="py-16 bg-gray-100 border-y-4 border-black">
-                <div className="max-w-6xl mx-auto px-4">
-                    <h2 className="text-4xl font-black text-center mb-12">Choose Your Tool</h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <Link
-                            to="/compress"
-                            className="group bg-white border-4 border-black rounded-2xl p-8 text-center hover:-translate-y-1 hover:shadow-[8px_8px_0_#000] transition-all"
-                        >
-                            <div className="text-5xl mb-4">📦</div>
-                            <h3 className="text-2xl font-black mb-2">Compress</h3>
-                            <p className="text-gray-500 mb-6">Reduce file size by optimizing images within your PDF.</p>
-                            <span className="inline-block px-6 py-3 font-bold uppercase tracking-wide border-4 border-black rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
-                                Compress PDF
-                            </span>
-                        </Link>
-
-                        <Link
-                            to="/split"
-                            className="group bg-white border-4 border-black rounded-2xl p-8 text-center hover:-translate-y-1 hover:shadow-[8px_8px_0_#000] transition-all"
-                        >
-                            <div className="text-5xl mb-4">✂️</div>
-                            <h3 className="text-2xl font-black mb-2">Split</h3>
-                            <p className="text-gray-500 mb-6">Extract specific pages or split into multiple documents.</p>
-                            <span className="inline-block px-6 py-3 font-bold uppercase tracking-wide border-4 border-black rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
-                                Split PDF
-                            </span>
-                        </Link>
-
-                        <Link
-                            to="/merge"
-                            className="group bg-white border-4 border-black rounded-2xl p-8 text-center hover:-translate-y-1 hover:shadow-[8px_8px_0_#000] transition-all"
-                        >
-                            <div className="text-5xl mb-4">🔗</div>
-                            <h3 className="text-2xl font-black mb-2">Merge</h3>
-                            <p className="text-gray-500 mb-6">Combine multiple PDFs into a single document.</p>
-                            <span className="inline-block px-6 py-3 font-bold uppercase tracking-wide border-4 border-black rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
-                                Merge PDFs
-                            </span>
-                        </Link>
-                    </div>
-                </div>
-            </section> */}
 
             {/* Trust Section */}
             <section className="py-16  bg-gray-100">
