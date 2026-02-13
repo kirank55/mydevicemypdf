@@ -72,7 +72,6 @@ export default function CompressPage() {
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                     Reduce your PDF file size while maintaining quality.
                 </p>
-                {/* <span className="font-bold text-black"> 100% in your browser</span> */}
             </div>
 
             {/* Main content */}

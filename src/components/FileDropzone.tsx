@@ -1,4 +1,5 @@
 import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
+import { formatBytes } from '../lib/shared';
 
 interface FileDropzoneProps {
     onFileSelect: (file: File) => void;
@@ -20,15 +21,9 @@ export default function FileDropzone({
     const [fileName, setFileName] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const formatFileSize = (bytes: number): string => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-    };
-
     // Initialize fileName from selectedFile if provided
     if (selectedFile && !fileName) {
-        setFileName(`${selectedFile.name} (${formatFileSize(selectedFile.size)})`);
+        setFileName(`${selectedFile.name} (${formatBytes(selectedFile.size)})`);
     }
 
     const validateAndProcessFile = (file: File) => {
@@ -47,7 +42,7 @@ export default function FileDropzone({
             return;
         }
 
-        setFileName(`${file.name} (${formatFileSize(file.size)})`);
+        setFileName(`${file.name} (${formatBytes(file.size)})`);
         onFileSelect(file);
     };
 

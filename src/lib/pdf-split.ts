@@ -229,22 +229,8 @@ export async function splitPdfAllPages(
 // DOWNLOAD UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Downloads a single blob as a file.
- * 
- * @param blob - The blob to download
- * @param fileName - The filename to use
- */
-export function downloadBlob(blob: Blob, fileName: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
+export { downloadBlob, formatBytes } from './shared';
+import { downloadBlob } from './shared';
 
 /**
  * Creates a ZIP file containing all split pages and downloads it.
@@ -263,16 +249,3 @@ export async function downloadAsZip(pages: SplitPage[], zipFileName: string): Pr
     downloadBlob(zipBlob, zipFileName);
 }
 
-/**
- * Formats bytes into a human-readable string.
- * 
- * @param bytes - Number of bytes
- * @returns Formatted string like "1.5 MB"
- */
-export function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
