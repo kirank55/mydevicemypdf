@@ -5,8 +5,6 @@ import CompressPage from './pages/CompressPage';
 import SplitPage from './pages/SplitPage';
 import MergePage from './pages/MergePage';
 
-
-
 export default function App() {
   return (
     <BrowserRouter>

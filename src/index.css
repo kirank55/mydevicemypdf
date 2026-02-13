@@ -31,3 +31,8 @@
     line-height: 1.25;
   }
 }
+
+@keyframes progress-stripes {
+  0% { transform: translateX(-20px); }
+  100% { transform: translateX(0); }
+}

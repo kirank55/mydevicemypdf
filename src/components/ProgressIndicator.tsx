@@ -61,14 +61,6 @@ export default function ProgressIndicator({
                     <span>Complete!</span>
                 </div>
             )}
-
-            {/* Inline styles for animation */}
-            <style>{`
-        @keyframes progress-stripes {
-          0% { transform: translateX(-20px); }
-          100% { transform: translateX(0); }
-        }
-      `}</style>
         </div>
     );
 }
