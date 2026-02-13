@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
 import MultiFileDropzone from '../components/MultiFileDropzone';
 import ProgressIndicator from '../components/ProgressIndicator';
 import { mergePdfs, downloadBlob, formatBytes } from '../lib/pdf-merge';
@@ -10,6 +10,8 @@ export default function MergePage() {
     const [progress, setProgress] = useState(0);
     const [result, setResult] = useState<{ blob: Blob; size: number } | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const handleFilesSelect = (newFiles: File[]) => {
         setFiles(prev => [...prev, ...newFiles]);
@@ -41,6 +43,45 @@ export default function MergePage() {
             return newFiles;
         });
         setResult(null);
+    };
+
+    const reorderFiles = (fromIndex: number, toIndex: number) => {
+        if (fromIndex === toIndex) return;
+        setFiles(prev => {
+            if (fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+                return prev;
+            }
+
+            const newFiles = [...prev];
+            const [moved] = newFiles.splice(fromIndex, 1);
+            newFiles.splice(toIndex, 0, moved);
+            return newFiles;
+        });
+        setResult(null);
+    };
+
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index);
+        setDragOverIndex(index);
+    };
+
+    const handleDragOver = (event: DragEvent<HTMLDivElement>, index: number) => {
+        event.preventDefault();
+        if (draggedIndex === null || dragOverIndex === index) return;
+        setDragOverIndex(index);
+    };
+
+    const handleDrop = (event: DragEvent<HTMLDivElement>, dropIndex: number) => {
+        event.preventDefault();
+        if (draggedIndex === null) return;
+        reorderFiles(draggedIndex, dropIndex);
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+        setDragOverIndex(null);
     };
 
     const handleMerge = async () => {
@@ -108,9 +149,25 @@ export default function MergePage() {
                                 Clear All
                             </button>
                         </div>
-                        <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                        <p className="mb-3 text-xs font-medium text-gray-500">
+                            Drag and drop files to reorder.
+                        </p>
+                        <div className="space-y-2 max-h-125 overflow-y-auto">
                             {files.map((file, index) => (
-                                <div key={`${file.name}-${index}`} className="flex items-center gap-3 bg-white p-3 rounded-xl border-2 border-gray-100">
+                                <div
+                                    key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                                    draggable
+                                    onDragStart={() => handleDragStart(index)}
+                                    onDragOver={(event) => handleDragOver(event, index)}
+                                    onDrop={(event) => handleDrop(event, index)}
+                                    onDragEnd={handleDragEnd}
+                                    className={`
+                                        flex items-center gap-3 bg-white p-3 rounded-xl border-2
+                                        transition-colors cursor-grab active:cursor-grabbing
+                                        ${draggedIndex === index ? 'opacity-60' : 'opacity-100'}
+                                        ${dragOverIndex === index && draggedIndex !== index ? 'border-black bg-gray-100' : 'border-gray-100'}
+                                    `}
+                                >
                                     <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-xs font-bold text-gray-500">
                                         {index + 1}
                                     </div>
