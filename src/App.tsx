@@ -14,10 +14,10 @@ const JpgToPdfPage = lazy(() => import('./pages/JpgToPdfPage'));
 const PdfToJpgPage = lazy(() => import('./pages/PdfToJpgPage'));
 const AddPageNumbersPage = lazy(() => import('./pages/AddPageNumbersPage'));
 const AddWatermarkPage = lazy(() => import('./pages/AddWatermarkPage'));
-const ProtectPdfPage = lazy(() => import('./pages/ProtectPdfPage'));
-const UnlockPdfPage = lazy(() => import('./pages/UnlockPdfPage'));
-const SignPdfPage = lazy(() => import('./pages/SignPdfPage'));
-const PdfToPdfaPage = lazy(() => import('./pages/PdfToPdfaPage'));
+// const ProtectPdfPage = lazy(() => import('./pages/ProtectPdfPage'));
+// const UnlockPdfPage = lazy(() => import('./pages/UnlockPdfPage'));
+// const SignPdfPage = lazy(() => import('./pages/SignPdfPage'));
+// const PdfToPdfaPage = lazy(() => import('./pages/PdfToPdfaPage'));
 const RepairPdfPage = lazy(() => import('./pages/RepairPdfPage'));
 
 function PageLoader() {
@@ -54,12 +54,13 @@ export default function App() {
             {/* Annotations & Metadata */}
             <Route path="add-pdf-page-number" element={<AddPageNumbersPage />} />
             <Route path="pdf-add-watermark" element={<AddWatermarkPage />} />
-            <Route path="convert-pdf-to-pdfa" element={<PdfToPdfaPage />} />
+            {/* <Route path="convert-pdf-to-pdfa" element={<PdfToPdfaPage />} /> */}
 
             {/* Security */}
-            <Route path="protect-pdf" element={<ProtectPdfPage />} />
-            <Route path="unlock-pdf" element={<UnlockPdfPage />} />
-            <Route path="sign-pdf" element={<SignPdfPage />} />
+            {/* <Route path="protect-pdf" element={<ProtectPdfPage />} /> */}
+            {/* <Route path="unlock-pdf" element={<UnlockPdfPage />} /> */}
+            {/* <Route path="sign-pdf" element={<SignPdfPage />} /> */}
+
             <Route path="repair-pdf" element={<RepairPdfPage />} />
           </Route>
         </Routes>

@@ -30,7 +30,7 @@ const toolCategories = [
         tools: [
             { name: 'JPG to PDF', route: '/jpg-to-pdf', icon: Image, description: 'Convert images to PDF' },
             { name: 'PDF to JPG', route: '/pdf-to-jpg', icon: FileImage, description: 'Save pages as images' },
-            { name: 'PDF to PDF/A', route: '/convert-pdf-to-pdfa', icon: FileCheck, description: 'Convert to archival format' },
+            // { name: 'PDF to PDF/A', route: '/convert-pdf-to-pdfa', icon: FileCheck, description: 'Convert to archival format' },
         ],
     },
     {
@@ -38,9 +38,9 @@ const toolCategories = [
         tools: [
             { name: 'Add Page Numbers', route: '/add-pdf-page-number', icon: Hash, description: 'Add numbering to pages' },
             { name: 'Add Watermark', route: '/pdf-add-watermark', icon: Droplets, description: 'Stamp text or images over PDF' },
-            { name: 'Sign PDF', route: '/sign-pdf', icon: PenTool, description: 'Add a digital signature' },
-            { name: 'Protect PDF', route: '/protect-pdf', icon: Lock, description: 'Add password protection' },
-            { name: 'Unlock PDF', route: '/unlock-pdf', icon: Unlock, description: 'Remove password security' },
+            // { name: 'Sign PDF', route: '/sign-pdf', icon: PenTool, description: 'Add a digital signature' },
+            // { name: 'Protect PDF', route: '/protect-pdf', icon: Lock, description: 'Add password protection' },
+            // { name: 'Unlock PDF', route: '/unlock-pdf', icon: Unlock, description: 'Remove password security' },
         ],
     },
 ];
