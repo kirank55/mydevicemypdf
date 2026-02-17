@@ -3,8 +3,8 @@ import {
     Shield, Zap, Globe, Award,
     Merge, Scissors, Minimize2, Trash2, GripVertical, RotateCw,
     Image, FileImage,
-    Hash, Droplets,
-    Lock, Unlock, PenTool, Wrench, FileCheck,
+    Hash, Droplets, Wrench,
+    // Lock, Unlock, PenTool, FileCheck,
 } from 'lucide-react';
 
 const toolCategories = [
