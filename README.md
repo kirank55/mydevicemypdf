@@ -3,8 +3,6 @@
 Privacy-first PDF utilities that run entirely in your browser.
 Compress, split, merge, and more — with no uploads, no servers, and no tracking.
 
-> Project package name: `pdftools`
-
 ## Preview
 ![MyDeviceMyPDF preview](docs/preview.jpg)
 
