@@ -6,9 +6,6 @@ Compress, split, merge, and more — with no uploads, no servers, and no trackin
 > Project package name: `pdftools`
 
 ## Preview
-
-Add a screenshot at `docs/preview.jpg` and it will render here:
-
 ![MyDeviceMyPDF preview](docs/preview.jpg)
 
 ## Tools
