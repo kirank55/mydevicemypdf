@@ -1,185 +1,195 @@
-/**
- * PDF Compression Utilities
- * 
- * This module provides client-side PDF compression using the @quicktoolsone/pdf-compress
- * library. All processing happens entirely in the browser - files never leave the device.
- * 
- * ═══════════════════════════════════════════════════════════════════════════════════════
- * HOW PDF COMPRESSION WORKS
- * ═══════════════════════════════════════════════════════════════════════════════════════
- * 
- * PDFs are complex documents containing multiple types of content:
- * - Text and fonts
- * - Vector graphics
- * - Embedded images (often 80-95% of file size)
- * - Metadata and structural information
- * 
- * This library uses a MULTI-STRATEGY approach to achieve optimal compression:
- * 
- * ┌─────────────────────────────────────────────────────────────────────────────────────┐
- * │ STRATEGY 1: LOSSLESS STRUCTURAL OPTIMIZATION (using pdf-lib)                       │
- * ├─────────────────────────────────────────────────────────────────────────────────────┤
- * │ • Object Stream Compression: Combines multiple small PDF objects into compressed   │
- * │   streams, reducing overhead from individual object headers                         │
- * │ • Removes orphaned/unused objects: Pages to a new document, leaving behind any     │
- * │   unreferenced resources from the original                                          │
- * │ • Optimizes internal references: Streamlines the PDF's cross-reference table       │
- * │ • Typical reduction: 5-15% for most PDFs                                           │
- * └─────────────────────────────────────────────────────────────────────────────────────┘
- * 
- * ┌─────────────────────────────────────────────────────────────────────────────────────┐
- * │ STRATEGY 2: IMAGE RE-COMPRESSION (using pdf.js + Canvas API)                       │
- * ├─────────────────────────────────────────────────────────────────────────────────────┤
- * │ This is where the major file size reduction happens for image-heavy PDFs:          │
- * │                                                                                     │
- * │ 1. RENDER: Each page is rendered using Mozilla's pdf.js library                    │
- * │ 2. ADAPTIVE DPI: Resolution is adjusted based on file size:                        │
- * │    • 50MB+  → 50 DPI  (extremely aggressive)                                       │
- * │    • 20-50MB → 75 DPI                                                               │
- * │    • 10-20MB → 100 DPI                                                              │
- * │    • <10MB  → 150 DPI                                                               │
- * │ 3. JPEG COMPRESSION: Rendered pages are compressed as JPEG with quality:           │
- * │    • Lossless preset: Skips this strategy entirely (no image recompression)        │
- * │    • Max preset: 50% JPEG quality (aggressive)                                      │
- * │ 4. REBUILD: A new PDF is created with the compressed page images                   │
- * │ 5. MEMORY-SAFE: Canvas cleanup between pages, extra delays for large files         │
- * │                                                                                     │
- * │ Typical reduction: 40-90% for image-heavy PDFs, scanned documents                  │
- * └─────────────────────────────────────────────────────────────────────────────────────┘
- * 
- * ┌─────────────────────────────────────────────────────────────────────────────────────┐
- * │ STRATEGY 3: BEST RESULT SELECTION                                                  │
- * ├─────────────────────────────────────────────────────────────────────────────────────┤
- * │ The library compares results from both strategies and returns the smallest file    │
- * │ that is still smaller than the original. If no compression helps, returns original.│
- * └─────────────────────────────────────────────────────────────────────────────────────┘
- * 
- * ═══════════════════════════════════════════════════════════════════════════════════════
- * COMPRESSION PRESETS
- * ═══════════════════════════════════════════════════════════════════════════════════════
- * 
- * LOSSLESS:
- *   - Uses ONLY Strategy 1 (structural optimization)
- *   - No quality loss - text remains crisp, images unchanged
- *   - Best for: text-heavy documents, legal documents, archival
- *   - Expected reduction: 5-15%
- * 
+import { compressExtreme, compressLossless as compressLosslessMupdf } from './pdf-compressor-mupdf';
+import {
+  compressLosslessGhostscript,
+  compressLosslessPdfLib,
+  compressLosslessQpdf,
+} from './pdf-compressor-lossless-engines';
 
- * 
- * ═══════════════════════════════════════════════════════════════════════════════════════
- * BROWSER REQUIREMENTS
- * ═══════════════════════════════════════════════════════════════════════════════════════
- * 
- * - Canvas API (for image rendering/compression)
- * - Modern ES2020+ JavaScript support
- * - PDF.js worker file (served from /pdf.js/pdf.worker.min.mjs)
- * - Supported: Chrome/Edge 90+, Firefox 89+, Safari 15+
- * 
- * @module pdf-utils
- */
+export type CompressionQuality = 'lossless' | 'extreme';
+export type LosslessEngine = 'mupdf' | 'pdf-lib' | 'ghostscript' | 'qpdf';
+export type EngineStatus = 'success' | 'failed';
 
-
-import { compressExtreme, compressLossless } from './pdf-compressor-mupdf';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
+export interface LosslessEngineResult {
+  engine: LosslessEngine;
+  label: string;
+  status: EngineStatus;
+  compressedSize: number | null;
+  compressionPercent: number | null;
+  blob: Blob | null;
+  fileName: string | null;
+  error: string | null;
+}
 
 export interface CompressionResult {
-    /** Original file size in bytes */
-    originalSize: number;
-    /** Compressed file size in bytes */
-    compressedSize: number;
-    /** The compressed PDF as a Blob, ready for download */
-    blob: Blob;
-    /** Suggested output filename (original name + "_compressed.pdf") */
-    fileName: string;
+  originalSize: number;
+  compressedSize: number;
+  blob: Blob;
+  fileName: string;
+  engine: LosslessEngine | 'extreme';
+  engineResults: LosslessEngineResult[];
 }
 
 export interface CompressionOptions {
-    /** 
-     * Compression quality preset:
-     * - 'lossless': Structural optimization only (5-15% reduction)
-
-     * - 'extreme': Aggressive rasterization at very low DPI (80-95% reduction, text becomes unselectable)
-     */
-    quality: 'lossless' | 'extreme';
-    /** Compression level (0-100) for extreme mode. Higher means more compression (lower quality). */
-    compressionLevel?: number;
+  quality: CompressionQuality;
+  compressionLevel?: number;
+  onProgress?: (progress: number, status?: string) => void;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIGURATION
-// ─────────────────────────────────────────────────────────────────────────────
+interface LosslessEngineRunner {
+  engine: LosslessEngine;
+  label: string;
+  run: (file: File) => Promise<Blob>;
+}
 
+const LOSSLESS_ENGINES: LosslessEngineRunner[] = [
+  { engine: 'mupdf', label: 'MuPDF', run: compressLosslessMupdf },
+  { engine: 'pdf-lib', label: 'pdf-lib', run: compressLosslessPdfLib },
+  { engine: 'ghostscript', label: 'Ghostscript', run: compressLosslessGhostscript },
+  { engine: 'qpdf', label: 'QPDF', run: compressLosslessQpdf },
+];
 
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN COMPRESSION FUNCTION
-// ─────────────────────────────────────────────────────────────────────────────
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
 
-/**
- * Compresses a PDF file entirely in the browser.
- * 
- * @example
- * ```typescript
- * const result = await compressPDF(file, {
- *     quality: 'maximum',
- *     onProgress: (percent) => console.log(`${percent}% complete`)
- * });
- * 
- * console.log(`Reduced from ${result.originalSize} to ${result.compressedSize} bytes`);
- * downloadBlob(result.blob, result.fileName);
- * ```
- * 
- * @param file - The PDF File object to compress
- * @param options - Compression options including quality preset and progress callback
- * @returns Promise resolving to compression result with the compressed PDF blob
- * @throws Error if the PDF cannot be parsed or compression fails
- */
-export async function compressPDF(
-    file: File,
-    options: CompressionOptions
-): Promise<CompressionResult> {
+  return 'Unknown compression error';
+}
 
-    const { quality, compressionLevel = 70 } = options;
-    const originalSize = file.size;
-    let baseName: string = file.name.replace(/\.pdf$/i, '');;
+function baseNameFor(file: File): string {
+  return file.name.replace(/\.pdf$/i, '');
+}
 
-    let blob: Blob;
+function getEngineFileName(baseName: string, engine: LosslessEngine): string {
+  const suffix = engine.replace(/[^a-z0-9-]/gi, '-');
+  return `${baseName}_compressed_${suffix}.pdf`;
+}
 
-    if (quality === 'lossless') {
-        blob = await compressLossless(file);
-    } else {
-        blob = await compressExtreme(file, compressionLevel);
+function sortLosslessResults(results: LosslessEngineResult[]): LosslessEngineResult[] {
+  const successful = results
+    .filter((result) => result.status === 'success' && result.compressedSize !== null)
+    .sort((a, b) => (a.compressedSize as number) - (b.compressedSize as number));
+
+  const failed = results.filter((result) => result.status !== 'success');
+
+  return [...successful, ...failed];
+}
+
+async function runLosslessEngines(
+  file: File,
+  originalSize: number,
+  onProgress?: (progress: number, status?: string) => void
+): Promise<LosslessEngineResult[]> {
+  const baseName = baseNameFor(file);
+  const results: LosslessEngineResult[] = [];
+  const totalEngines = LOSSLESS_ENGINES.length;
+
+  onProgress?.(5, 'Preparing lossless engines...');
+
+  // Run sequentially to avoid large parallel WASM memory spikes on low-end devices.
+  for (let index = 0; index < totalEngines; index++) {
+    const runner = LOSSLESS_ENGINES[index];
+    const startProgress = 10 + Math.floor((index / totalEngines) * 80);
+    const doneProgress = 10 + Math.floor(((index + 1) / totalEngines) * 80);
+
+    onProgress?.(startProgress, `Running ${runner.label} (${index + 1}/${totalEngines})...`);
+
+    try {
+      const blob = await runner.run(file);
+      const compressedSize = blob.size;
+
+      results.push({
+        engine: runner.engine,
+        label: runner.label,
+        status: 'success',
+        compressedSize,
+        compressionPercent: getCompressionPercent(originalSize, compressedSize),
+        blob,
+        fileName: getEngineFileName(baseName, runner.engine),
+        error: null,
+      });
+    } catch (error) {
+      results.push({
+        engine: runner.engine,
+        label: runner.label,
+        status: 'failed',
+        compressedSize: null,
+        compressionPercent: null,
+        blob: null,
+        fileName: null,
+        error: toErrorMessage(error),
+      });
     }
 
-    return {
-        blob,
-        originalSize,
-        compressedSize: blob.size,
-        fileName: `${baseName}_compressed.pdf`,
-    };
+    onProgress?.(doneProgress, `Finished ${runner.label}`);
+  }
+
+  onProgress?.(95, 'Ranking results...');
+  return sortLosslessResults(results);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UTILITY FUNCTIONS (re-exported from shared)
-// ─────────────────────────────────────────────────────────────────────────────
+export async function compressPDF(file: File, options: CompressionOptions): Promise<CompressionResult> {
+  const { quality, compressionLevel = 70, onProgress } = options;
+  const originalSize = file.size;
+  const baseName = baseNameFor(file);
+
+  if (quality === 'extreme') {
+    onProgress?.(10, 'Running extreme compression...');
+    const blob = await compressExtreme(file, compressionLevel);
+    onProgress?.(100, 'Compression complete');
+
+    return {
+      originalSize,
+      compressedSize: blob.size,
+      blob,
+      fileName: `${baseName}_compressed.pdf`,
+      engine: 'extreme',
+      engineResults: [
+        {
+          engine: 'mupdf',
+          label: 'MuPDF Extreme',
+          status: 'success',
+          compressedSize: blob.size,
+          compressionPercent: getCompressionPercent(originalSize, blob.size),
+          blob,
+          fileName: `${baseName}_compressed.pdf`,
+          error: null,
+        },
+      ],
+    };
+  }
+
+  const engineResults = await runLosslessEngines(file, originalSize, onProgress);
+  const best = engineResults.find((result) => result.status === 'success');
+
+  if (!best || !best.blob || best.compressedSize === null) {
+    const failureSummary = engineResults
+      .filter((result) => result.error)
+      .map((result) => `${result.label}: ${result.error}`)
+      .join(' | ');
+
+    throw new Error(failureSummary || 'All compression engines failed');
+  }
+
+  onProgress?.(100, 'Compression complete');
+
+  return {
+    originalSize,
+    compressedSize: best.compressedSize,
+    blob: best.blob,
+    fileName: `${baseName}_compressed.pdf`,
+    engine: best.engine,
+    engineResults,
+  };
+}
 
 export { downloadBlob, formatBytes } from './shared';
 
-/**
- * Calculates the compression percentage achieved.
- * 
- * @example
- * getCompressionPercent(1000, 300) // 70 (70% smaller)
- * 
- * @param original - Original size in bytes
- * @param compressed - Compressed size in bytes
- * @returns Percentage reduction (0-100), rounded to nearest integer
- */
 export function getCompressionPercent(original: number, compressed: number): number {
-    if (original === 0) return 0;
-    return Math.round(((original - compressed) / original) * 100);
+  if (original === 0) return 0;
+  return Math.round(((original - compressed) / original) * 100);
 }
-

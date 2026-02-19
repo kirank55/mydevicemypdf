@@ -36,6 +36,8 @@ Note: your browser still loads this web app from wherever it’s hosted. “No u
   - `pdf-lib` (merge, page ops, stamping)
   - `pdfjs-dist` (rendering)
   - `mupdf` (WASM-based optimization/compression helpers)
+  - `@jspawn/qpdf-wasm` (lossless structural optimization engine)
+  - `@jspawn/ghostscript-wasm` (lossless PDF rewrite/compression engine)
 - `jszip` (packaging multi-file outputs when needed)
 
 ## Requirements
@@ -89,6 +91,8 @@ These files are served from `public/` and must be included in your deploy output
 
 - `public/pdf.js/pdf.worker.min.mjs` (PDF.js worker)
 - `public/mupdf-wasm.wasm` (MuPDF WASM binary)
+- `public/qpdf-wasm.wasm` (QPDF WASM binary)
+- `public/ghostscript-wasm.wasm` (Ghostscript WASM binary)
 
 ## Known limitations
 

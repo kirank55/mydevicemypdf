@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@jspawn/ghostscript-wasm':
+        specifier: ^0.0.2
+        version: 0.0.2
+      '@jspawn/qpdf-wasm':
+        specifier: ^0.0.2
+        version: 0.0.2
       '@quicktoolsone/pdf-compress':
         specifier: ^2.0.0
         version: 2.0.0
@@ -389,6 +395,12 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@jspawn/ghostscript-wasm@0.0.2':
+    resolution: {integrity: sha512-IhGvfXNezc+V3jyJlmjz7oxrjWPqFPcz1gqRdo0Y7EkVyFuL1A+tCRnQXx/BHQZPRvBDA+Uf0EqkvXzfMzoDcw==}
+
+  '@jspawn/qpdf-wasm@0.0.2':
+    resolution: {integrity: sha512-yPFv/0o5fvVEkJjEoXf393hfpZYUZfrRY8DaLq4AVw+KWZK0GiTVAecpYdxxVACbVKMHvBa+uHxtWlilYRiLzA==}
 
   '@napi-rs/canvas-android-arm64@0.1.90':
     resolution: {integrity: sha512-3JBULVF+BIgr7yy7Rf8UjfbkfFx4CtXrkJFD1MDgKJ83b56o0U9ciT8ZGTCNmwWkzu8RbNKlyqPP3KYRG88y7Q==}
@@ -1762,6 +1774,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@jspawn/ghostscript-wasm@0.0.2': {}
+
+  '@jspawn/qpdf-wasm@0.0.2': {}
 
   '@napi-rs/canvas-android-arm64@0.1.90':
     optional: true
