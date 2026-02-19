@@ -18,7 +18,7 @@ const AddWatermarkPage = lazy(() => import('./pages/AddWatermarkPage'));
 // const UnlockPdfPage = lazy(() => import('./pages/UnlockPdfPage'));
 // const SignPdfPage = lazy(() => import('./pages/SignPdfPage'));
 // const PdfToPdfaPage = lazy(() => import('./pages/PdfToPdfaPage'));
-const RepairPdfPage = lazy(() => import('./pages/RepairPdfPage'));
+// const RepairPdfPage = lazy(() => import('./pages/RepairPdfPage'));
 
 function PageLoader() {
   return (
@@ -60,8 +60,7 @@ export default function App() {
             {/* <Route path="protect-pdf" element={<ProtectPdfPage />} /> */}
             {/* <Route path="unlock-pdf" element={<UnlockPdfPage />} /> */}
             {/* <Route path="sign-pdf" element={<SignPdfPage />} /> */}
-
-            <Route path="repair-pdf" element={<RepairPdfPage />} />
+            {/* <Route path="repair-pdf" element={<RepairPdfPage />} /> */}
           </Route>
         </Routes>
       </Suspense>

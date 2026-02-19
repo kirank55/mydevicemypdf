@@ -3,8 +3,8 @@ import {
     Shield, Zap, Globe, Award,
     Merge, Scissors, Minimize2, Trash2, GripVertical, RotateCw,
     Image, FileImage,
-    Hash, Droplets, Wrench,
-    // Lock, Unlock, PenTool, FileCheck,
+    Hash, Droplets,
+    // Wrench, Lock, Unlock, PenTool, FileCheck,
 } from 'lucide-react';
 
 const toolCategories = [
@@ -19,10 +19,10 @@ const toolCategories = [
         ],
     },
     {
-        name: 'Optimize & Repair',
+        name: 'Optimize',
         tools: [
             { name: 'Compress PDF', route: '/compress-pdf', icon: Minimize2, description: 'Reduce the file size of your PDF' },
-            { name: 'Repair PDF', route: '/repair-pdf', icon: Wrench, description: 'Recover data from a corrupted PDF' },
+            // { name: 'Repair PDF', route: '/repair-pdf', icon: Wrench, description: 'Recover data from a corrupted PDF' },
         ],
     },
     {
