@@ -29,6 +29,8 @@ export interface WatermarkOptions {
     rotation: number;
     color: { r: number; g: number; b: number };
     position: 'center' | 'tiled';
+    tileOffsetX?: number;
+    tileOffsetY?: number;
 }
 
 function toRoman(num: number): string {
@@ -131,9 +133,11 @@ export async function addWatermark(file: File, options: WatermarkOptions): Promi
             const textWidth = font.widthOfTextAtSize(options.text, options.fontSize);
             const spacingX = textWidth + 100;
             const spacingY = options.fontSize + 120;
+            const tileOffsetX = options.tileOffsetX ?? 0;
+            const tileOffsetY = options.tileOffsetY ?? 0;
 
-            for (let y = -height; y < height * 2; y += spacingY) {
-                for (let x = -width; x < width * 2; x += spacingX) {
+            for (let y = -height + tileOffsetY; y < height * 2; y += spacingY) {
+                for (let x = -width + tileOffsetX; x < width * 2; x += spacingX) {
                     page.drawText(options.text, {
                         x,
                         y,

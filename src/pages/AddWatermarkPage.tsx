@@ -20,6 +20,8 @@ export default function AddWatermarkPage() {
     const [rotation, setRotation] = useState(-30);
     const [colorIndex, setColorIndex] = useState(0);
     const [position, setPosition] = useState<'center' | 'tiled'>('tiled');
+    const [tileOffsetX, setTileOffsetX] = useState(0);
+    const [tileOffsetY, setTileOffsetY] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [result, setResult] = useState<Blob | null>(null);
@@ -40,6 +42,8 @@ export default function AddWatermarkPage() {
                 rotation,
                 color: { r: color.r, g: color.g, b: color.b },
                 position,
+                tileOffsetX,
+                tileOffsetY,
             });
             setProgress(100);
             setResult(blob);
@@ -95,6 +99,18 @@ export default function AddWatermarkPage() {
                                 ))}
                             </div>
                         </div>
+                        {position === 'tiled' && (
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block font-bold text-sm uppercase tracking-wide text-gray-500 mb-2">X Axis Position: {tileOffsetX}px</label>
+                                    <input type="range" min="-500" max="500" value={tileOffsetX} onChange={(e) => setTileOffsetX(Number(e.target.value))} className="w-full accent-black" />
+                                </div>
+                                <div>
+                                    <label className="block font-bold text-sm uppercase tracking-wide text-gray-500 mb-2">Y Axis Position: {tileOffsetY}px</label>
+                                    <input type="range" min="-500" max="500" value={tileOffsetY} onChange={(e) => setTileOffsetY(Number(e.target.value))} className="w-full accent-black" />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Color */}
                         <div>
@@ -135,7 +151,7 @@ export default function AddWatermarkPage() {
                                 style={{ opacity }}
                             >
                                 {position === 'tiled' ? (
-                                    <div className="absolute inset-0" style={{ transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }}>
+                                    <div className="absolute inset-0" style={{ transform: `translate(${tileOffsetX * 0.25}px, ${tileOffsetY * 0.25}px) rotate(${rotation}deg)`, transformOrigin: 'center' }}>
                                         {Array.from({ length: 5 }, (_, row) => (
                                             <div key={row} className="flex gap-8 whitespace-nowrap" style={{ marginTop: row === 0 ? '-20%' : '40px' }}>
                                                 {Array.from({ length: 3 }, (_, col) => (
