@@ -85,6 +85,8 @@ This app uses React Router’s `BrowserRouter`. If you deploy to static hosting,
 - Vercel: configure rewrites to `/index.html`
 - Nginx/Apache: route unknown paths to `index.html`
 
+Also ensure `public/sitemap.xml` and `public/robots.txt` match your deployed domain.
+
 ## Assets required at runtime
 
 These files are served from `public/` and must be included in your deploy output:

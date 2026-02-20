@@ -14,6 +14,7 @@ const JpgToPdfPage = lazy(() => import('./pages/JpgToPdfPage'));
 const PdfToJpgPage = lazy(() => import('./pages/PdfToJpgPage'));
 const AddPageNumbersPage = lazy(() => import('./pages/AddPageNumbersPage'));
 const AddWatermarkPage = lazy(() => import('./pages/AddWatermarkPage'));
+const SitemapPage = lazy(() => import('./pages/SitemapPage'));
 // const ProtectPdfPage = lazy(() => import('./pages/ProtectPdfPage'));
 // const UnlockPdfPage = lazy(() => import('./pages/UnlockPdfPage'));
 // const SignPdfPage = lazy(() => import('./pages/SignPdfPage'));
@@ -38,6 +39,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
+            <Route path="sitemap" element={<SitemapPage />} />
 
             {/* Page Manipulation */}
             <Route path="compress-pdf" element={<CompressPage />} />
