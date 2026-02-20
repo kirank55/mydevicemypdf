@@ -67,6 +67,13 @@ export default function Layout() {
           files never leave your device.
         </p>
         <div className="flex justify-center gap-4 mt-2 text-gray-400 text-sm">
+          <Link
+            to="/sitemap"
+            className="hover:text-white transition-colors"
+          >
+            Sitemap
+          </Link>
+          <span>•</span>
           <a
             href="https://github.com/kirank55/mydevicemypdf"
             target="_blank"
