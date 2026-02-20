@@ -8,8 +8,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-# This repo ships pnpm-lock.yaml; ignore npm's lockfile to avoid churn.
-package-lock.json
 dist
 dist-ssr
 *.local
