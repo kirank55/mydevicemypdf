@@ -33,6 +33,7 @@ export interface CompressionOptions {
   quality: CompressionQuality;
   compressionLevel?: number;
   onProgress?: (progress: number, status?: string) => void;
+  onEngineResult?: (result: LosslessEngineResult) => void;
 }
 
 interface LosslessEngineRunner {
@@ -82,7 +83,8 @@ function sortLosslessResults(results: LosslessEngineResult[]): LosslessEngineRes
 async function runLosslessEngines(
   file: File,
   originalSize: number,
-  onProgress?: (progress: number, status?: string) => void
+  onProgress?: (progress: number, status?: string) => void,
+  onEngineResult?: (result: LosslessEngineResult) => void
 ): Promise<LosslessEngineResult[]> {
   const baseName = baseNameFor(file);
   const results: LosslessEngineResult[] = [];
@@ -98,11 +100,12 @@ async function runLosslessEngines(
 
     onProgress?.(startProgress, `Running ${runner.label} (${index + 1}/${totalEngines})...`);
 
+    let engineResult: LosslessEngineResult;
     try {
       const blob = await runner.run(file);
       const compressedSize = blob.size;
 
-      results.push({
+      engineResult = {
         engine: runner.engine,
         label: runner.label,
         status: 'success',
@@ -111,9 +114,9 @@ async function runLosslessEngines(
         blob,
         fileName: getEngineFileName(baseName, runner.engine),
         error: null,
-      });
+      };
     } catch (error) {
-      results.push({
+      engineResult = {
         engine: runner.engine,
         label: runner.label,
         status: 'failed',
@@ -122,9 +125,11 @@ async function runLosslessEngines(
         blob: null,
         fileName: null,
         error: toErrorMessage(error),
-      });
+      };
     }
 
+    results.push(engineResult);
+    onEngineResult?.(engineResult);
     onProgress?.(doneProgress, `Finished ${runner.label}`);
   }
 
@@ -163,7 +168,8 @@ export async function compressPDF(file: File, options: CompressionOptions): Prom
     };
   }
 
-  const engineResults = await runLosslessEngines(file, originalSize, onProgress);
+  const { onEngineResult } = options;
+  const engineResults = await runLosslessEngines(file, originalSize, onProgress, onEngineResult);
   const best = engineResults.find((result) => result.status === 'success');
 
   if (!best || !best.blob || best.compressedSize === null) {

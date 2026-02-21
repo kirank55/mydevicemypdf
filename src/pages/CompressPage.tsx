@@ -8,7 +8,15 @@ import {
   getCompressionPercent,
   type CompressionResult,
   type LosslessEngineResult,
+  type LosslessEngine,
 } from '../lib/pdf-utils';
+
+const ALL_LOSSLESS_ENGINES: { engine: LosslessEngine; label: string }[] = [
+  { engine: 'mupdf', label: 'MuPDF' },
+  { engine: 'pdf-lib', label: 'pdf-lib' },
+  { engine: 'ghostscript', label: 'Ghostscript' },
+  { engine: 'qpdf', label: 'QPDF' },
+];
 
 type Quality = 'lossless' | 'extreme';
 
@@ -38,6 +46,7 @@ export default function CompressPage() {
   const [progress, setProgress] = useState(0);
   const [progressStatus, setProgressStatus] = useState('Compressing your PDF...');
   const [result, setResult] = useState<CompressionResult | null>(null);
+  const [partialResults, setPartialResults] = useState<LosslessEngineResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = (selectedFile: File) => {
@@ -56,6 +65,7 @@ export default function CompressPage() {
     setProgress(0);
     setProgressStatus('Starting compression...');
     setResult(null);
+    setPartialResults([]);
 
     try {
       const compressionResult = await compressPDF(file, {
@@ -64,6 +74,9 @@ export default function CompressPage() {
         onProgress: (nextProgress, status) => {
           setProgress(nextProgress);
           if (status) setProgressStatus(status);
+        },
+        onEngineResult: (engineResult) => {
+          setPartialResults((prev) => [...prev, engineResult]);
         },
       });
 
@@ -89,6 +102,7 @@ export default function CompressPage() {
   const handleReset = () => {
     setFile(null);
     setResult(null);
+    setPartialResults([]);
     setError(null);
     setProgress(0);
     setProgressStatus('Compressing your PDF...');
@@ -96,12 +110,17 @@ export default function CompressPage() {
 
   const handleTryAgain = () => {
     setResult(null);
+    setPartialResults([]);
     setError(null);
     setProgress(0);
     setProgressStatus('Compressing your PDF...');
   };
 
   const bestResult = result?.engineResults.find((entry) => isSuccessful(entry)) ?? null;
+
+  // Determine which engines have completed and which are still pending
+  const completedEngines = new Set(partialResults.map((r) => r.engine));
+  const showLiveResults = isProcessing && quality === 'lossless' && partialResults.length > 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -180,6 +199,72 @@ export default function CompressPage() {
           </div>
         )}
 
+        {showLiveResults && file && (
+          <div className="bg-gray-50 rounded-2xl p-8">
+            <h3 className="font-black text-xl mb-4">Engine Results (live)</h3>
+            <div className="space-y-3">
+              {ALL_LOSSLESS_ENGINES.map(({ engine, label }) => {
+                const engineResult = partialResults.find((r) => r.engine === engine);
+                const pending = !completedEngines.has(engine);
+
+                if (pending) {
+                  return (
+                    <div
+                      key={engine}
+                      className="rounded-xl border-2 border-gray-200 bg-white/60 p-4 flex items-center gap-3"
+                    >
+                      <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span className="font-bold text-gray-400">{label}</span>
+                      <span className="text-sm text-gray-400 ml-auto">Running...</span>
+                    </div>
+                  );
+                }
+
+                if (!engineResult) return null;
+                const successful = isSuccessful(engineResult);
+
+                return (
+                  <div
+                    key={engine}
+                    className={`rounded-xl border-2 p-4 ${successful ? 'border-green-300 bg-white' : 'border-red-200 bg-white/80'
+                      }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="font-black text-lg">{engineResult.label}</div>
+                        {successful ? (
+                          <div className="text-sm text-gray-600">
+                            {formatBytes(engineResult.compressedSize)}{' '}
+                            {engineResult.compressionPercent !== null
+                              ? `(${formatDeltaLabel(engineResult.compressionPercent)})`
+                              : ''}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-red-600">
+                            Failed: {engineResult.error || 'Unknown error'}
+                          </div>
+                        )}
+                      </div>
+
+                      {successful && (
+                        <button
+                          onClick={() => handleDownloadEngine(engineResult)}
+                          className="px-4 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-colors"
+                        >
+                          Download
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="p-6 bg-red-50 border-2 border-red-200 rounded-2xl">
             <div className="font-black text-red-700 text-lg mb-2">Error</div>
@@ -238,9 +323,8 @@ export default function CompressPage() {
                     return (
                       <div
                         key={engineResult.engine}
-                        className={`rounded-xl border-2 p-4 ${
-                          isBest ? 'border-black bg-white' : 'border-gray-200 bg-white/80'
-                        }`}
+                        className={`rounded-xl border-2 p-4 ${isBest ? 'border-black bg-white' : 'border-gray-200 bg-white/80'
+                          }`}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
